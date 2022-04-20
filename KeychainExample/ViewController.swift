@@ -9,21 +9,25 @@ import UIKit
 
 class ViewController: UIViewController {
     
-    let account = UIDevice.current.name
-    let service = Bundle.main.bundleIdentifier ?? ""
+    let account = UIDevice.current.identifierForVendor?.uuidString ?? "" // 기기의 UUID
+    let service = Bundle.main.bundleIdentifier ?? "" // 앱의 번들아이덴티파이어
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        print("viewDidLoad - 기존에 있던 패스워드 지우기")
+        print("어카운트: \(account), 서비스: \(service)")
         deletePassword()
     }
     
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        print("viewDidLoad - 새로 패스워드를 저장하기")
         savePassword()
     }
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(animated)
+        print("viewWillAppear - 새로 저장한 패스워드 불러오기")
         getPassword()
     }
 
@@ -32,7 +36,7 @@ class ViewController: UIViewController {
             try KeychainManager.save(
                 service: service,
                 account: account,
-                password: "AnotherOne".data(using: .utf8) ?? Data()
+                password: "내가 저장하고 싶은 패스워드".data(using: .utf8) ?? Data() // 여기에 여러분이 저장하고자 하는 중요 정보를 넣으시면 됩니다
             )
         } catch {
             print(error)
@@ -44,12 +48,12 @@ class ViewController: UIViewController {
             service: service,
             account: account
         ) else {
-            print("Failed to read password")
+            print("getPassword() - 불러올 수 있는 패스워드가 없습니다")
             return
         }
         
         let password = String(decoding: data, as: UTF8.self)
-        print("Read password: \(password)")
+        print("getPassword() - 불러온 패스워드: \(password)")
     }
     
     func deletePassword() {
@@ -57,7 +61,7 @@ class ViewController: UIViewController {
             service: service,
             account: account
         ) else {
-            print("Failed to read password - no password")
+            print("deletePassword() - 불러올 수 있는 패스워드가 없습니다")
             return
         }
         KeychainManager.delete(service: service, account: account, password: data)
@@ -71,7 +75,6 @@ class KeychainManager {
     }
     
     static func save(service: String, account: String, password: Data) throws {
-        // service, account, password, class, data
         let query: [String: AnyObject] = [
             kSecClass as String: kSecClassGenericPassword, // 키체인 아이템 클래스 타입
             kSecAttrService as String: service as AnyObject, // 서비스 아이디 -> 앱 번들 아이디
@@ -88,7 +91,7 @@ class KeychainManager {
             throw KeychainError.unknown(status)
         }
         
-        print("save - status: \(status)")
+        print("save() - status: \(status)")
     }
     
     static func get(service: String, account: String) -> Data? {
@@ -107,7 +110,7 @@ class KeychainManager {
             &result
         )
         
-        print("get - status: \(status)")
+        print("get() - status: \(status)")
         
         return result as? Data
     }
@@ -120,8 +123,8 @@ class KeychainManager {
             kSecValueData as String: password as AnyObject // 저장할 아이템의 데이터
         ]
         let passwordToDelete = String(decoding: password, as: UTF8.self)
-        print("passwordToDelete - \(passwordToDelete)")
+        print("delete() - 삭제할 패스워드 - \(passwordToDelete)")
         let status = SecItemDelete(query as CFDictionary)
-        print("delete - status: \(status)")
+        print("delete() - status: \(status)")
     }
 }
